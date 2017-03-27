@@ -124,6 +124,7 @@ public class FlexibleTabLayout extends HorizontalScrollView {
       new ArrayList<>();
   // Pool we use as a simple RecyclerBin
   private final Pools.Pool<FlexibleTabLayout.TabView> mTabViewPool = new Pools.SimplePool<>(12);
+  //
   public FlexibleTabLayout.GroSlidingTabStrip mTabStrip;
   int mTabPaddingStart;
   int mTabPaddingTop;
@@ -137,7 +138,10 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   int mTabGravity;
   int mMode;
   ViewPager mViewPager;
-  private Typeface textFont = null;
+  //FlexibleTabLayout Additions
+  //Used to set fonts of textviews involved
+  private Typeface mTypeface;
+  private int mStripWidth;
   private FlexibleTabLayout.Tab mSelectedTab;
   private int mContentInsetStart;
   private FlexibleTabLayout.OnTabSelectedListener mSelectedListener;
@@ -178,6 +182,27 @@ public class FlexibleTabLayout extends HorizontalScrollView {
         context.obtainStyledAttributes(attrs, android.support.design.R.styleable.TabLayout,
             defStyleAttr, android.support.design.R.style.Widget_Design_TabLayout
         );
+
+    //Custom TypedArray attrs for FlexibleTabLayout
+    final TypedArray flexibleTabTypedArray =
+        context.obtainStyledAttributes(attrs, R.styleable.FlexibleTabLayout);
+
+    //Todo once Android O comes out fontFamily will be a valid param
+    if (flexibleTabTypedArray.hasValue(R.styleable.FlexibleTabLayout_fontFamilyPath)) {
+      mTypeface = Typeface.createFromAsset(
+          getContext().getAssets(),
+          flexibleTabTypedArray.getString(R.styleable.FlexibleTabLayout_fontFamilyPath)
+      );
+    }
+    if (flexibleTabTypedArray.hasValue(R.styleable.FlexibleTabLayout_stripWidth)) {
+      mStripWidth = flexibleTabTypedArray.getDimensionPixelSize(
+          R.styleable.FlexibleTabLayout_stripWidth,
+          mStripWidth
+      );
+    }
+    flexibleTabTypedArray.recycle();
+
+    //End of custom attrs for FlexibleTabLayout
 
     mTabStrip.setSelectedIndicatorHeight(
         a.getDimensionPixelSize(
@@ -233,8 +258,6 @@ public class FlexibleTabLayout extends HorizontalScrollView {
           a.getColorStateList(android.support.design.R.styleable.TabLayout_tabTextColor);
     }
 
-    //todo add fonts as nedcessary
-
     if (a.hasValue(android.support.design.R.styleable.TabLayout_tabSelectedTextColor)) {
       // We have an explicit selected text color set, so we need to make merge it with the
       // current colors. This is exposed so that developers can use theme attributes to set
@@ -271,14 +294,6 @@ public class FlexibleTabLayout extends HorizontalScrollView {
     applyModeAndGravity();
   }
 
-  /**
-   * Linear interpolation between {@code startValue} and {@code endValue} by {@code fraction}.
-   */
-
-  public static int lerp(final int startValue, final int endValue, final float fraction) {
-    return startValue + Math.round(fraction * (endValue - startValue));
-  }
-
   private static ColorStateList createColorStateList(
       final int defaultColor,
       final int selectedColor) {
@@ -296,6 +311,14 @@ public class FlexibleTabLayout extends HorizontalScrollView {
     i++;
 
     return new ColorStateList(states, colors);
+  }
+
+  /**
+   * Linear interpolation between {@code startValue} and {@code endValue} by {@code fraction}.
+   */
+
+  public static int lerp(final int startValue, final int endValue, final float fraction) {
+    return startValue + Math.round(fraction * (endValue - startValue));
   }
 
   @Override
@@ -427,8 +450,9 @@ public class FlexibleTabLayout extends HorizontalScrollView {
    *
    * @param listener listener to add
    */
-  public void addOnTabSelectedListener(@NonNull final FlexibleTabLayout.OnTabSelectedListener
-      listener) {
+  public void addOnTabSelectedListener(
+      @NonNull final FlexibleTabLayout.OnTabSelectedListener
+          listener) {
     if (!mSelectedListeners.contains(listener)) {
       mSelectedListeners.add(listener);
     }
@@ -649,8 +673,9 @@ public class FlexibleTabLayout extends HorizontalScrollView {
    *
    * @param listener listener to remove
    */
-  public void removeOnTabSelectedListener(@NonNull final FlexibleTabLayout.OnTabSelectedListener
-      listener) {
+  public void removeOnTabSelectedListener(
+      @NonNull final FlexibleTabLayout.OnTabSelectedListener
+          listener) {
     mSelectedListeners.remove(listener);
   }
 
@@ -699,8 +724,9 @@ public class FlexibleTabLayout extends HorizontalScrollView {
    * {@link #removeOnTabSelectedListener(FlexibleTabLayout.OnTabSelectedListener)}.
    */
   @Deprecated
-  public void setOnTabSelectedListener(@Nullable final FlexibleTabLayout.OnTabSelectedListener
-      listener) {
+  public void setOnTabSelectedListener(
+      @Nullable final FlexibleTabLayout.OnTabSelectedListener
+          listener) {
 
     // The logic in this method emulates what we had before support for multiple
     // registered listeners.
@@ -770,6 +796,12 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   @Deprecated
   public void setTabsFromPagerAdapter(@Nullable final PagerAdapter adapter) {
     setPagerAdapter(adapter, false);
+  }
+
+  /**
+   * FlexibleTabBarLayout method, sets the typeface for all textViews
+   */
+  public void setTypeface() {
   }
 
   /**
@@ -1290,17 +1322,16 @@ public class FlexibleTabLayout extends HorizontalScrollView {
      * Set a description of this tab's content for use in accessibility support. If no content
      * description is provided the title will be used.
      *
-     * @param resId A resource ID referring to the description text
+     * @param contentDesc Description of this tab's content
      * @return The current instance for call chaining
-     * @see #setContentDescription(CharSequence)
+     * @see #setContentDescription(int)
      * @see #getContentDescription()
      */
     @NonNull
-    public FlexibleTabLayout.Tab setContentDescription(@StringRes final int resId) {
-      if (mParent == null) {
-        throw new IllegalArgumentException("Tab not attached to a TabLayout");
-      }
-      return setContentDescription(mParent.getResources().getText(resId));
+    public FlexibleTabLayout.Tab setContentDescription(@Nullable final CharSequence contentDesc) {
+      mContentDesc = contentDesc;
+      updateView();
+      return this;
     }
 
     /**
@@ -1317,21 +1348,20 @@ public class FlexibleTabLayout extends HorizontalScrollView {
     /**
      * Set a custom view to be used for this tab.
      * <p>
-     * If the provided view contains a {@link TextView} with an ID of
+     * If the inflated layout contains a {@link TextView} with an ID of
      * {@link android.R.id#text1} then that will be updated with the value given
      * to {@link #setText(CharSequence)}. Similarly, if this layout contains an
      * {@link ImageView} with ID {@link android.R.id#icon} then it will be updated with
      * the value given to {@link #setIcon(Drawable)}.
      * </p>
      *
-     * @param view Custom view to be used as a tab.
+     * @param resId A layout resource to inflate and use as a custom tab view
      * @return The current instance for call chaining
      */
     @NonNull
-    public FlexibleTabLayout.Tab setCustomView(@Nullable final View view) {
-      mCustomView = view;
-      updateView();
-      return this;
+    public FlexibleTabLayout.Tab setCustomView(@LayoutRes final int resId) {
+      final LayoutInflater inflater = LayoutInflater.from(mView.getContext());
+      return setCustomView(inflater.inflate(resId, mView, false));
     }
 
     /**
@@ -1347,14 +1377,15 @@ public class FlexibleTabLayout extends HorizontalScrollView {
     /**
      * Set the icon displayed on this tab.
      *
-     * @param icon The drawable to use as an icon
+     * @param resId A resource ID referring to the icon that should be displayed
      * @return The current instance for call chaining
      */
     @NonNull
-    public FlexibleTabLayout.Tab setIcon(@Nullable final Drawable icon) {
-      mIcon = icon;
-      updateView();
-      return this;
+    public FlexibleTabLayout.Tab setIcon(@DrawableRes final int resId) {
+      if (mParent == null) {
+        throw new IllegalArgumentException("Tab not attached to a TabLayout");
+      }
+      return setIcon(AppCompatResources.getDrawable(mParent.getContext(), resId));
     }
 
     /**
@@ -1405,14 +1436,15 @@ public class FlexibleTabLayout extends HorizontalScrollView {
      * Set the text displayed on this tab. Text may be truncated if there is not room to display
      * the entire string.
      *
-     * @param text The text to display
+     * @param resId A resource ID referring to the text that should be displayed
      * @return The current instance for call chaining
      */
     @NonNull
-    public FlexibleTabLayout.Tab setText(@Nullable final CharSequence text) {
-      mText = text;
-      updateView();
-      return this;
+    public FlexibleTabLayout.Tab setText(@StringRes final int resId) {
+      if (mParent == null) {
+        throw new IllegalArgumentException("Tab not attached to a TabLayout");
+      }
+      return setText(mParent.getResources().getText(resId));
     }
 
     /**
@@ -1439,64 +1471,64 @@ public class FlexibleTabLayout extends HorizontalScrollView {
      * Set a description of this tab's content for use in accessibility support. If no content
      * description is provided the title will be used.
      *
-     * @param contentDesc Description of this tab's content
+     * @param resId A resource ID referring to the description text
      * @return The current instance for call chaining
-     * @see #setContentDescription(int)
+     * @see #setContentDescription(CharSequence)
      * @see #getContentDescription()
      */
     @NonNull
-    public FlexibleTabLayout.Tab setContentDescription(@Nullable final CharSequence contentDesc) {
-      mContentDesc = contentDesc;
-      updateView();
-      return this;
+    public FlexibleTabLayout.Tab setContentDescription(@StringRes final int resId) {
+      if (mParent == null) {
+        throw new IllegalArgumentException("Tab not attached to a TabLayout");
+      }
+      return setContentDescription(mParent.getResources().getText(resId));
     }
 
     /**
      * Set a custom view to be used for this tab.
      * <p>
-     * If the inflated layout contains a {@link TextView} with an ID of
+     * If the provided view contains a {@link TextView} with an ID of
      * {@link android.R.id#text1} then that will be updated with the value given
      * to {@link #setText(CharSequence)}. Similarly, if this layout contains an
      * {@link ImageView} with ID {@link android.R.id#icon} then it will be updated with
      * the value given to {@link #setIcon(Drawable)}.
      * </p>
      *
-     * @param resId A layout resource to inflate and use as a custom tab view
+     * @param view Custom view to be used as a tab.
      * @return The current instance for call chaining
      */
     @NonNull
-    public FlexibleTabLayout.Tab setCustomView(@LayoutRes final int resId) {
-      final LayoutInflater inflater = LayoutInflater.from(mView.getContext());
-      return setCustomView(inflater.inflate(resId, mView, false));
+    public FlexibleTabLayout.Tab setCustomView(@Nullable final View view) {
+      mCustomView = view;
+      updateView();
+      return this;
     }
 
     /**
      * Set the icon displayed on this tab.
      *
-     * @param resId A resource ID referring to the icon that should be displayed
+     * @param icon The drawable to use as an icon
      * @return The current instance for call chaining
      */
     @NonNull
-    public FlexibleTabLayout.Tab setIcon(@DrawableRes final int resId) {
-      if (mParent == null) {
-        throw new IllegalArgumentException("Tab not attached to a TabLayout");
-      }
-      return setIcon(AppCompatResources.getDrawable(mParent.getContext(), resId));
+    public FlexibleTabLayout.Tab setIcon(@Nullable final Drawable icon) {
+      mIcon = icon;
+      updateView();
+      return this;
     }
 
     /**
      * Set the text displayed on this tab. Text may be truncated if there is not room to display
      * the entire string.
      *
-     * @param resId A resource ID referring to the text that should be displayed
+     * @param text The text to display
      * @return The current instance for call chaining
      */
     @NonNull
-    public FlexibleTabLayout.Tab setText(@StringRes final int resId) {
-      if (mParent == null) {
-        throw new IllegalArgumentException("Tab not attached to a TabLayout");
-      }
-      return setText(mParent.getResources().getText(resId));
+    public FlexibleTabLayout.Tab setText(@Nullable final CharSequence text) {
+      mText = text;
+      updateView();
+      return this;
     }
 
     void reset() {
@@ -2023,9 +2055,13 @@ public class FlexibleTabLayout extends HorizontalScrollView {
 
       // We need to switch the text size based on whether the text is spanning 2 lines or not
       if (mTextView != null) {
-        final Resources res = getResources();
         float textSize = mTabTextSize;
         int maxLines = mDefaultMaxLines;
+
+        //Set textview font if exists
+        if (mTypeface != null) {
+          mTextView.setTypeface(mTypeface);
+        }
 
         if (mIconView != null && mIconView.getVisibility() == VISIBLE) {
           // If the icon view is being displayed, we limit the text to 1 line
@@ -2180,8 +2216,8 @@ public class FlexibleTabLayout extends HorizontalScrollView {
         if (mTabTextColors != null) {
           mTextView.setTextColor(mTabTextColors);
         }
-        if (textFont != null) {
-          mTextView.setTypeface(textFont);
+        if (mTypeface != null) {
+          mTextView.setTypeface(mTypeface);
         }
         updateTextAndIcon(mTextView, mIconView);
       } else {
