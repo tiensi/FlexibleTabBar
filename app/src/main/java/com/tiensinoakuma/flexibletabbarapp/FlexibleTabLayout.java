@@ -125,7 +125,7 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   // Pool we use as a simple RecyclerBin
   private final Pools.Pool<FlexibleTabLayout.TabView> mTabViewPool = new Pools.SimplePool<>(12);
   //
-  public FlexibleTabLayout.GroSlidingTabStrip mTabStrip;
+  private FlexibleTabLayout.GroSlidingTabStrip mTabStrip;
   int mTabPaddingStart;
   int mTabPaddingTop;
   int mTabPaddingEnd;
@@ -141,7 +141,6 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   //FlexibleTabLayout Additions
   //Used to set fonts of textviews involved
   private Typeface mTypeface;
-  private int mStripWidth;
   private FlexibleTabLayout.Tab mSelectedTab;
   private int mContentInsetStart;
   private FlexibleTabLayout.OnTabSelectedListener mSelectedListener;
@@ -174,6 +173,7 @@ public class FlexibleTabLayout extends HorizontalScrollView {
     setHorizontalScrollBarEnabled(false);
 
     // Add the TabStrip
+    //todo see if custom is possible? by moving this to a method that can be set default in tab lyaout
     mTabStrip = new FlexibleTabLayout.GroSlidingTabStrip(context);
     super.addView(mTabStrip, 0, new HorizontalScrollView.LayoutParams(
         LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
@@ -188,18 +188,21 @@ public class FlexibleTabLayout extends HorizontalScrollView {
         context.obtainStyledAttributes(attrs, R.styleable.FlexibleTabLayout);
 
     //Todo once Android O comes out fontFamily will be a valid param
-    if (flexibleTabTypedArray.hasValue(R.styleable.FlexibleTabLayout_fontFamilyPath)) {
-      mTypeface = Typeface.createFromAsset(
-          getContext().getAssets(),
-          flexibleTabTypedArray.getString(R.styleable.FlexibleTabLayout_fontFamilyPath)
-      );
-    }
-    if (flexibleTabTypedArray.hasValue(R.styleable.FlexibleTabLayout_stripWidth)) {
-      mStripWidth = flexibleTabTypedArray.getDimensionPixelSize(
-          R.styleable.FlexibleTabLayout_stripWidth,
-          mStripWidth
-      );
-    }
+    mTypeface = Typeface.createFromAsset(
+        getContext().getAssets(),
+        flexibleTabTypedArray.getString(R.styleable.FlexibleTabLayout_fontFamilyPath)
+    );
+
+    mTabStrip.setSelectedIndicatorWidth(
+        flexibleTabTypedArray.getDimensionPixelSize(R.styleable.FlexibleTabLayout_stripWidth, 0)
+    );
+
+    mTabStrip.setMatchTextWidth(flexibleTabTypedArray.getBoolean(
+          R.styleable.FlexibleTabLayout_stripMatchTextWidth,
+          false
+        )
+    );
+
     flexibleTabTypedArray.recycle();
 
     //End of custom attrs for FlexibleTabLayout
@@ -283,7 +286,6 @@ public class FlexibleTabLayout extends HorizontalScrollView {
     mTabGravity = a.getInt(android.support.design.R.styleable.TabLayout_tabGravity, GRAVITY_FILL);
     a.recycle();
 
-    // TODO add attr for these
     final Resources res = getResources();
     mTabTextMultiLineSize =
         res.getDimensionPixelSize(android.support.design.R.dimen.design_tab_text_size_2line);
@@ -567,6 +569,15 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   }
 
   /**
+   * Changes tab layout strip to match width of textviews
+   * @param matchTextWidth
+   */
+  public void setMatchTextWidth(final boolean matchTextWidth) {
+    mTabStrip.setMatchTextWidth(matchTextWidth);
+    updateAllTabs();
+  }
+
+  /**
    * Set the gravity to use when laying out the tabs.
    *
    * @param gravity one of {@link #GRAVITY_CENTER} or {@link #GRAVITY_FILL}.
@@ -626,6 +637,26 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   public void setTabTextColors(@Nullable final ColorStateList textColor) {
     if (mTabTextColors != textColor) {
       mTabTextColors = textColor;
+      updateAllTabs();
+    }
+  }
+
+  /**
+   * Sets TabStrip Width for all tabs being used
+   *
+   * @param width
+   */
+  public void setStripWidth(final int width) {
+    mTabStrip.setSelectedIndicatorWidth(width);
+  }
+
+  /**
+   * Sets fonts with given typeface for textviews being used
+   * @param typeface
+   */
+  public void setTypeface(final Typeface typeface) {
+    if (typeface != null && !typeface.equals(mTypeface)) {
+      mTypeface = typeface;
       updateAllTabs();
     }
   }
@@ -796,12 +827,6 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   @Deprecated
   public void setTabsFromPagerAdapter(@Nullable final PagerAdapter adapter) {
     setPagerAdapter(adapter, false);
-  }
-
-  /**
-   * FlexibleTabBarLayout method, sets the typeface for all textViews
-   */
-  public void setTypeface() {
   }
 
   /**
@@ -1664,7 +1689,9 @@ public class FlexibleTabLayout extends HorizontalScrollView {
     private final Paint mSelectedIndicatorPaint;
     int mSelectedPosition = -1;
     float mSelectionOffset;
+    private boolean mMatchTextWidth;
     private int mSelectedIndicatorHeight;
+    private int mSelectedIndicatorWidth;
     private int mIndicatorLeft = -1;
     private int mIndicatorRight = -1;
 
@@ -1784,8 +1811,8 @@ public class FlexibleTabLayout extends HorizontalScrollView {
         return;
       }
 
-      final int targetLeft = targetView.getLeft() + targetView.getTextViewLeft();
-      final int targetRight = targetView.getLeft() + targetView.getTextViewRight();
+      final int targetLeft = targetView.getLeft() + (mMatchTextWidth ? targetView.getTextViewLeft() : 0);
+      final int targetRight = targetView.getRight() + (mMatchTextWidth ? targetView.getTextViewRight() : 0);
       final int startLeft;
       final int startRight;
 
@@ -1872,6 +1899,13 @@ public class FlexibleTabLayout extends HorizontalScrollView {
       }
     }
 
+    void setMatchTextWidth(final boolean match) {
+      if (mMatchTextWidth != match) {
+        mMatchTextWidth = match;
+        ViewCompat.postInvalidateOnAnimation(this);
+      }
+    }
+
     void setIndicatorPositionFromTabPosition(final int position, final float positionOffset) {
       if (mIndicatorAnimator != null && mIndicatorAnimator.isRunning()) {
         mIndicatorAnimator.cancel();
@@ -1896,23 +1930,44 @@ public class FlexibleTabLayout extends HorizontalScrollView {
       }
     }
 
+    //Added method for modifying width
+    void setSelectedIndicatorWidth(final int width) {
+      if (mSelectedIndicatorWidth != width) {
+        mSelectedIndicatorWidth = width;
+        ViewCompat.postInvalidateOnAnimation(this);
+      }
+    }
+
     private void updateIndicatorPosition() {
       final FlexibleTabLayout.TabView selectedTitle =
           (FlexibleTabLayout.TabView) getChildAt(mSelectedPosition);
       int left, right;
 
       if (selectedTitle != null && selectedTitle.getWidth() > 0) {
-        left = selectedTitle.getLeft() + selectedTitle.getTextViewLeft();
-        right = selectedTitle.getLeft() + selectedTitle.getTextViewRight();
+        //If we are matching text width then modify the width
+        if (mMatchTextWidth) {
+          left = selectedTitle.getLeft() + selectedTitle.getTextViewLeft();
+          right = selectedTitle.getLeft() + selectedTitle.getTextViewRight();
+        } else {
+          left = selectedTitle.getLeft();
+          right = selectedTitle.getRight();
+        }
 
         if (mSelectionOffset > 0f && mSelectedPosition < getChildCount() - 1) {
           // Draw the selection partway between the tabs
           final FlexibleTabLayout.TabView
               nextTitle = (FlexibleTabLayout.TabView) getChildAt(mSelectedPosition + 1);
-          left = (int) (mSelectionOffset * (nextTitle.getLeft() + nextTitle.getTextViewLeft()) +
-              (1.0f - mSelectionOffset) * left);
-          right = (int) (mSelectionOffset * (nextTitle.getLeft() + nextTitle.getTextViewRight()) +
-              (1.0f - mSelectionOffset) * right);
+          if (mMatchTextWidth) {
+            left = (int) (mSelectionOffset * (nextTitle.getLeft() + nextTitle.getTextViewLeft()) +
+                (1.0f - mSelectionOffset) * left);
+            right = (int) (mSelectionOffset * (nextTitle.getLeft() + nextTitle.getTextViewRight()) +
+                (1.0f - mSelectionOffset) * right);
+          } else {
+            left = (int) (mSelectionOffset * nextTitle.getLeft() +
+                (1.0f - mSelectionOffset) * left);
+            right = (int) (mSelectionOffset * nextTitle.getRight() +
+                (1.0f - mSelectionOffset) * right);
+          }
         }
       } else {
         left = right = -1;

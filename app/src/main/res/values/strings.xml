@@ -5,5 +5,5 @@
   <string name="change_font">Change Font</string>
   <string name="change_icon">Change Icon</string>
   <string name="change_width">Change Width</string>
-  <string name="change_width_text">Change Width (Text Size)</string>
+  <string name="change_width_text">Change Width (Match Text Size)</string>
 </resources>

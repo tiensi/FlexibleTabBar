@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<layout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+  <data/>
+<android.support.constraint.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_centerInParent="true"
     android:layout_height="match_parent"
@@ -38,14 +40,5 @@
       app:layout_constraintRight_toRightOf="parent"
       app:layout_constraintTop_toBottomOf="@id/btn_change_width_text"
       />
-
-  <Button
-      android:id="@+id/btn_change_icon"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="@string/change_icon"
-      app:layout_constraintLeft_toLeftOf="parent"
-      app:layout_constraintRight_toRightOf="parent"
-      app:layout_constraintTop_toBottomOf="@id/btn_change_width"
-      />
 </android.support.constraint.ConstraintLayout>
+</layout>

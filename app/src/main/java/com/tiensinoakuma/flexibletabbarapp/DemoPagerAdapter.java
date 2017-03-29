@@ -7,13 +7,16 @@ import android.support.v4.app.FragmentPagerAdapter;
 public class DemoPagerAdapter extends FragmentPagerAdapter {
 
   private final String[] tabTitles;
+  private DemoTabFragment.DemoFragmentListener listener;
 
-  public DemoPagerAdapter(final FragmentManager fm, final Resources resources) {
+  public DemoPagerAdapter(final FragmentManager fm, final Resources resources, final
+      DemoTabFragment.DemoFragmentListener listener) {
     super(fm);
     tabTitles = new String[] {
         resources.getString(R.string.tab_one),
         resources.getString(R.string.tab_two)
     };
+    this.listener = listener;
   }
 
   @Override public int getCount() {
@@ -21,7 +24,9 @@ public class DemoPagerAdapter extends FragmentPagerAdapter {
   }
 
   @Override public DemoTabFragment getItem(final int position) {
-    return DemoTabFragment.getInstance();
+    DemoTabFragment fragment = DemoTabFragment.getInstance();
+    fragment.setListener(listener);
+    return fragment;
   }
 
   @Override public CharSequence getPageTitle(final int position) {
