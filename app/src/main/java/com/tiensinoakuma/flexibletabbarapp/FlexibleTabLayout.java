@@ -647,7 +647,10 @@ public class FlexibleTabLayout extends HorizontalScrollView {
    * @param width
    */
   public void setStripWidth(final int width) {
-    mTabStrip.setSelectedIndicatorWidth(width);
+    if (mTabStrip.getSelectedIndicatorWidth() != width) {
+      mTabStrip.setSelectedIndicatorWidth(width);
+      updateAllTabs();
+    }
   }
 
   /**
@@ -1811,8 +1814,19 @@ public class FlexibleTabLayout extends HorizontalScrollView {
         return;
       }
 
-      final int targetLeft = targetView.getLeft() + (mMatchTextWidth ? targetView.getTextViewLeft() : 0);
-      final int targetRight = targetView.getRight() + (mMatchTextWidth ? targetView.getTextViewRight() : 0);
+      int modificationLeft = 0;
+      int modificationRight = 0;
+      if (mMatchTextWidth) {
+        modificationLeft = targetView.getTextViewLeft();
+        modificationRight = targetView.getTextViewRight();
+      } else if (mSelectedIndicatorWidth > 0) {
+        int targetMidpoint = targetView.getRight() / 2;
+        modificationLeft = targetMidpoint - (mSelectedIndicatorWidth / 2);
+        modificationRight = targetMidpoint + (mSelectedIndicatorWidth / 2);
+      }
+      final int targetLeft = targetView.getLeft() + modificationLeft;
+      final int targetRight = targetView.getLeft() + modificationRight;
+
       final int startLeft;
       final int startRight;
 
@@ -1938,16 +1952,25 @@ public class FlexibleTabLayout extends HorizontalScrollView {
       }
     }
 
+    int getSelectedIndicatorWidth() {
+      return mSelectedIndicatorWidth;
+    }
+
     private void updateIndicatorPosition() {
       final FlexibleTabLayout.TabView selectedTitle =
           (FlexibleTabLayout.TabView) getChildAt(mSelectedPosition);
       int left, right;
 
+      final int halfOfSelectedIndicatorWidth = mSelectedIndicatorWidth / 2;
       if (selectedTitle != null && selectedTitle.getWidth() > 0) {
-        //If we are matching text width then modify the width
+        //Matching text width > setting a strip width > default strip width
         if (mMatchTextWidth) {
           left = selectedTitle.getLeft() + selectedTitle.getTextViewLeft();
           right = selectedTitle.getLeft() + selectedTitle.getTextViewRight();
+        } else if (mSelectedIndicatorWidth > 0) {
+          final int tabMidpoint = selectedTitle.getLeft() + ((selectedTitle.getRight() - selectedTitle.getLeft()) / 2);
+          left = tabMidpoint - halfOfSelectedIndicatorWidth;
+          right = tabMidpoint + halfOfSelectedIndicatorWidth;
         } else {
           left = selectedTitle.getLeft();
           right = selectedTitle.getRight();
@@ -1961,6 +1984,12 @@ public class FlexibleTabLayout extends HorizontalScrollView {
             left = (int) (mSelectionOffset * (nextTitle.getLeft() + nextTitle.getTextViewLeft()) +
                 (1.0f - mSelectionOffset) * left);
             right = (int) (mSelectionOffset * (nextTitle.getLeft() + nextTitle.getTextViewRight()) +
+                (1.0f - mSelectionOffset) * right);
+          } else if (mSelectedIndicatorWidth > 0) {
+            final int tabMidpoint = nextTitle.getLeft() + ((nextTitle.getRight() - nextTitle.getLeft()) / 2);
+            left = (int) (mSelectionOffset * (tabMidpoint - halfOfSelectedIndicatorWidth) +
+                (1.0f - mSelectionOffset) * left);
+            right = (int) (mSelectionOffset * (tabMidpoint + halfOfSelectedIndicatorWidth) +
                 (1.0f - mSelectionOffset) * right);
           } else {
             left = (int) (mSelectionOffset * nextTitle.getLeft() +

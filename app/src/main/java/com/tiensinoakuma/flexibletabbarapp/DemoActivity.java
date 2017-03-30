@@ -13,8 +13,11 @@ public class DemoActivity extends AppCompatActivity implements
   //Used to switch between fonts
   private boolean fontSwitch;
   private boolean matchTextWidthSwitch;
+  private boolean changeStripWidthSwitch;
 
   private Typeface waltTypeface;
+  private int smallWidth;
+  private int largeWidth;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +36,9 @@ public class DemoActivity extends AppCompatActivity implements
 
     this.waltTypeface = Typeface.createFromAsset(
         getAssets(), getString(R.string.waltograph));
+
+    smallWidth = getResources().getDimensionPixelOffset(R.dimen.spacing_12dp);
+    largeWidth = getResources().getDimensionPixelOffset(R.dimen.spacing_48dp);
   }
 
   @Override public void matchTextWidth() {
@@ -45,5 +51,8 @@ public class DemoActivity extends AppCompatActivity implements
     fontSwitch = !fontSwitch;
   }
 
-
+  @Override public void swapStripWidth() {
+    tabLayout.setStripWidth(changeStripWidthSwitch ? smallWidth : largeWidth);
+    changeStripWidthSwitch = !changeStripWidthSwitch;
+  }
 }

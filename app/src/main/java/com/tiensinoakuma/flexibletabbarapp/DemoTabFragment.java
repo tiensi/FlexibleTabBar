@@ -47,6 +47,14 @@ public class DemoTabFragment extends Fragment {
         }
       }
     });
+
+    binding.btnChangeWidth.setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(final View v) {
+        if (listener != null) {
+          listener.swapStripWidth();
+        }
+      }
+    });
     return view;
   }
 
@@ -55,5 +63,7 @@ public class DemoTabFragment extends Fragment {
     void matchTextWidth();
 
     void swapFont();
+
+    void swapStripWidth();
   }
 }
