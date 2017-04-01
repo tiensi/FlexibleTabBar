@@ -5,6 +5,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import com.tiensinoakuma.flexibletabbarapp.databinding.ActivityDemoBinding;
+import com.tiensinoakuma.flexibletablayout.FlexibleTabLayout;
 
 public class DemoActivity extends AppCompatActivity implements
     DemoTabFragment.DemoFragmentListener {

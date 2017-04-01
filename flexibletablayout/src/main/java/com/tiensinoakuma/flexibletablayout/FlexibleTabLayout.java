@@ -1,4 +1,4 @@
-package com.tiensinoakuma.flexibletabbarapp;
+package com.tiensinoakuma.flexibletablayout;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
@@ -649,6 +649,7 @@ public class FlexibleTabLayout extends HorizontalScrollView {
   public void setStripWidth(final int width) {
     if (mTabStrip.getSelectedIndicatorWidth() != width) {
       mTabStrip.setSelectedIndicatorWidth(width);
+      mTabStrip.setMatchTextWidth(false);
       updateAllTabs();
     }
   }

@@ -1,4 +1,4 @@
-package com.tiensinoakuma.flexibletabbarapp;
+package com.tiensinoakuma.flexibletablayout;
 
 import android.content.Context;
 import android.content.res.TypedArray;
