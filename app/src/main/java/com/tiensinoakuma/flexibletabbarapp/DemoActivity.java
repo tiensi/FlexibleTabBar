@@ -11,7 +11,6 @@ public class DemoActivity extends AppCompatActivity implements
     DemoTabFragment.DemoFragmentListener {
 
   private FlexibleTabLayout tabLayout;
-  //Used to switch between fonts
   private boolean fontSwitch;
   private boolean matchTextWidthSwitch;
   private boolean changeStripWidthSwitch;
