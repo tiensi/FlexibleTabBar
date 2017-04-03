@@ -10,8 +10,7 @@ Have SlidingTabStrip width match the text width
 
 Change Text Font
 
-
-//Insert gif here
+![Demo](https://cloud.githubusercontent.com/assets/4589397/24624535/34b9f7bc-187a-11e7-8bc7-5828e54c6c55.gif)
 
 Download
 
