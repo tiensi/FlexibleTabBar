@@ -38,7 +38,7 @@ public class DemoActivity extends AppCompatActivity implements
     this.waltTypeface = Typeface.createFromAsset(
         getAssets(), getString(R.string.waltograph));
 
-    smallWidth = getResources().getDimensionPixelOffset(R.dimen.spacing_12dp);
+    smallWidth = 0;
     largeWidth = getResources().getDimensionPixelOffset(R.dimen.spacing_48dp);
   }
 

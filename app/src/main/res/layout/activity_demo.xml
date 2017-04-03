@@ -3,7 +3,6 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:flexibletab="http://schemas.android.com/apk/res-auto"
     >
-  <data/>
   <LinearLayout
       android:layout_width="match_parent"
       android:layout_height="match_parent"
@@ -15,7 +14,7 @@
         android:layout_height="wrap_content"
         flexibletab:fontFamilyPath="@string/waltograph"
         flexibletab:stripWidth="@dimen/spacing_12dp"
-        flexibletab:stripMatchTextWidth="false"
+        flexibletab:stripMatchTextWidth="true"
         />
     <android.support.v4.view.ViewPager
         android:id="@+id/view_pager"
