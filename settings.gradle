@@ -1,1 +1,1 @@
-include ':app', ':flexibletablayout'
+include ':app'

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <declare-styleable name="FlexibleTabLayout">
-    <attr name="fontFamilyPath" format="string"/>
-    <attr name="stripWidth" format="dimension"/>
-    <attr name="stripMatchTextWidth" format="boolean"/>
-  </declare-styleable>
-</resources>
